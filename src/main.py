@@ -3,8 +3,12 @@ from fastapi.openapi.utils import get_openapi
 from src import auth
 from src.auth import get_current_user
 
-app = FastAPI()
+from fastapi.responses import RedirectResponse
 
+app = FastAPI()
+@app.get("/")
+def root():
+    return RedirectResponse(url="/dashboard")
 # Include authentication routes
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 
@@ -16,7 +20,7 @@ def dashboard(user: dict = Depends(get_current_user)):
         "role": user["role"]
     }
 
-# ✅ Custom OpenAPI schema to show "Authorize with Bearer <token>"
+#  Custom OpenAPI schema to show "Authorize with Bearer <token>"
 def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
