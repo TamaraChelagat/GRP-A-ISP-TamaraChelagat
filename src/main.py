@@ -2,25 +2,10 @@ from fastapi import FastAPI, Depends
 from fastapi.openapi.utils import get_openapi
 from src import auth
 from src.auth import get_current_user
+
 from fastapi.responses import RedirectResponse
-from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
-origins = [
-    "http://localhost:8501",  # Streamlit
-    "http://127.0.0.1:8501",
-    "http://localhost:8000",
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
 @app.get("/")
 def root():
     return RedirectResponse(url="/dashboard")
@@ -29,15 +14,11 @@ app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 
 # Protected dashboard route
 @app.get("/dashboard")
-def dashboard():
-    # Fake user for demo
-    user = {"username": "DemoUser", "role": "admin"}
+def dashboard(user: dict = Depends(get_current_user)):
     return {
         "message": f"Welcome to the Fraud Detection Dashboard, {user['username']}!",
         "role": user["role"]
     }
-
-
 
 #  Custom OpenAPI schema to show "Authorize with Bearer <token>"
 def custom_openapi():
