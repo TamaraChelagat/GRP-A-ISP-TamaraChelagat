@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Models and data (if too large, use volume mounts)
+# models/
+# data/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+docs/
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.local
+
+# Frontend
+Frontend/
+frontend/
+
+# Other
+.DS_Store
+*.pkl.bak
+

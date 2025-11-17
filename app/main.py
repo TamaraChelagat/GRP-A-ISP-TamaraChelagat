@@ -1,7 +1,11 @@
 from fastapi import FastAPI, HTTPException, Depends, Header
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
+from collections import deque
+from datetime import datetime
+import uuid
 import numpy as np
 import joblib
 import tensorflow as tf
@@ -167,6 +171,14 @@ class StatsResponse(BaseModel):
     fraud_ratio: float
     model_accuracy: float
 
+class TransactionResponse(BaseModel):
+    transaction_id: str
+    amount: float
+    timestamp: str
+    risk_score: float
+    status: str
+    prediction: str
+
 # =====================================================
 # In-memory stats (replace with database in production)
 # =====================================================
@@ -174,6 +186,12 @@ stats = {
     "total_predictions": 0,
     "fraud_detected": 0
 }
+
+# =====================================================
+# In-memory transaction storage (replace with database in production)
+# =====================================================
+# Store last 100 transactions
+transactions_store = deque(maxlen=100)
 
 # =====================================================
 # Endpoints
@@ -201,7 +219,7 @@ def health_check():
 @app.post("/predict", response_model=PredictionResponse)
 async def predict(
     transaction: Transaction,
-    user: dict = Depends(verify_firebase_token)  # Use optional_auth for testing
+    user: dict = Depends(optional_auth)  # Use optional_auth for local/testing; switch to verify_firebase_token for prod
 ):
     """
     Predict fraud for a transaction
@@ -268,15 +286,31 @@ async def predict(
 
         prediction = int(probs >= optimal_threshold)
         label = "Fraudulent" if prediction == 1 else "Legitimate"
+        probability = float(probs[0])
 
         # Update stats
         stats["total_predictions"] += 1
         if prediction == 1:
             stats["fraud_detected"] += 1
 
+        # Extract amount from features (last feature)
+        amount = float(X[0, -1]) if X.shape[0] > 0 else 0.0
+
+        # Store transaction
+        transaction_id = f"TXN_{uuid.uuid4().hex[:12].upper()}"
+        transaction_data = {
+            "transaction_id": transaction_id,
+            "amount": amount,
+            "timestamp": datetime.now().isoformat(),
+            "risk_score": probability * 100,  # Convert to percentage
+            "status": "Flagged" if probability >= optimal_threshold else ("Under Review" if probability >= 0.5 else "Clear"),
+            "prediction": label
+        }
+        transactions_store.append(transaction_data)
+
         return PredictionResponse(
             prediction=label,
-            probability=float(probs[0]),
+            probability=probability,
             threshold_used=float(optimal_threshold),
             hybrid_feature_count=int(X_hybrid.shape[1]),
             user_email=user.get('email')
@@ -286,7 +320,7 @@ async def predict(
         raise HTTPException(status_code=500, detail=f"Model ensemble prediction failed: {e}")
 
 @app.get("/api/stats", response_model=StatsResponse)
-async def get_stats(user: dict = Depends(verify_firebase_token)):
+async def get_stats(user: dict = Depends(optional_auth)):
     """Get prediction statistics"""
     logger.info(f"Stats requested by: {user.get('email')}")
     
@@ -308,6 +342,17 @@ async def get_user_profile(user: dict = Depends(verify_firebase_token)):
         "email_verified": user.get("email_verified", False)
     }
 
+@app.get("/api/transactions", response_model=list[TransactionResponse])
+async def get_transactions(user: dict = Depends(optional_auth)):
+    """Get recent transactions"""
+    logger.info(f"Transactions requested by: {user.get('email')}")
+    
+    # Convert deque to list and reverse to show most recent first
+    transactions_list = list(transactions_store)
+    transactions_list.reverse()
+    
+    return transactions_list
+
 @app.get("/debug-model-info")
 def debug_model_info():
     """Debug endpoint - no authentication required"""
@@ -327,7 +372,7 @@ def debug_model_info():
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):
     logger.error(f"HTTP Exception: {exc.detail}")
-    return {
+    return JSONResponse(status_code=exc.status_code, content={
         "error": exc.detail,
         "status_code": exc.status_code
-    }
+    })
