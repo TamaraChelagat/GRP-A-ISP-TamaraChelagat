@@ -4,7 +4,7 @@ FraudDetectPro is a hybrid machine learning system for **real-time credit card f
 
 ---
 
-## 🚀 Project Overview
+##  Project Overview
 Traditional fraud detection systems struggle with:
 - **Extreme class imbalance** (fraud <0.5% of transactions).
 - **High false positives**, leading to poor customer experience.
@@ -19,7 +19,7 @@ The result is a **robust, scalable, and explainable fraud detection framework** 
 
 ---
 
-## 🧩 System Architecture
+## System Architecture
 1. **Data Source Layer** – Kaggle Credit Card Fraud dataset & simulated real-time streams.  
 2. **Data Processing Layer** – Cleaning, normalization, SMOTE/ADASYN balancing, and feature engineering (temporal + behavioral).  
 3. **Machine Learning Layer** – Ensemble classifiers + anomaly detectors.  
@@ -30,7 +30,7 @@ The result is a **robust, scalable, and explainable fraud detection framework** 
 
 ---
 
-## 📊 CRISP-DM Methodology
+## CRISP-DM Methodology
 FraudDetectPro development follows the **CRISP-DM** process:
 - **Business Understanding** – Improve fraud detection accuracy and interpretability.  
 - **Data Preparation** – Preprocessing, feature selection, balancing.  
@@ -40,7 +40,7 @@ FraudDetectPro development follows the **CRISP-DM** process:
 
 ---
 
-## 🔧 Tools & Technologies
+## Tools & Technologies
 - **Programming:** Python  
 - **Libraries:** Scikit-learn, Pandas, NumPy, imbalanced-learn  
 - **Explainability:** SHAP, LIME  
@@ -50,7 +50,7 @@ FraudDetectPro development follows the **CRISP-DM** process:
 
 ---
 
-# 🛡️ FraudDetectPro
+#  FraudDetectPro
 
 An Explainable Machine Learning System for Real-Time Credit Card Fraud Detection
 
