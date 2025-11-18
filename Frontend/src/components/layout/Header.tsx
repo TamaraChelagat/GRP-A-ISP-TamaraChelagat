@@ -17,6 +17,16 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useNavigate, useLocation } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "@/config/firebase";
@@ -27,6 +37,7 @@ export function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   const isActiveRoute = (path: string) => location.pathname === path;
 
@@ -45,50 +56,45 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center gap-4 px-4">
-        {/* Logo - Clickable to Dashboard */}
-        <div 
-          className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
-          onClick={() => navigate("/dashboard")}
-        >
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent" />
-          <span className="text-xl font-bold tracking-tight">FraudDetect<span className="text-primary">Pro</span></span>
-        </div>
-
-        {/* Collapsible Menu - Works on all screen sizes */}
+        {/* Collapsible Menu - Always visible */}
         <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" className="flex items-center gap-2">
+            <Button size="icon" variant="ghost">
               <Menu className="h-5 w-5" />
-              <span className="hidden sm:inline">Menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+          <SheetContent side="left" className="w-[300px]">
             <SheetHeader>
               <SheetTitle>Navigation</SheetTitle>
-              <SheetDescription>
-                Select a page to navigate
-              </SheetDescription>
+              <SheetDescription>Navigate to different sections</SheetDescription>
             </SheetHeader>
             <nav className="mt-6 space-y-2">
               {navigationItems.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <button
+                  <Button
                     key={item.path}
-                    onClick={() => handleNavigation(item.path)}
+                    variant={isActiveRoute(item.path) ? "secondary" : "ghost"}
                     className={cn(
-                      "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors hover:bg-accent hover:text-accent-foreground",
-                      isActiveRoute(item.path) && "bg-accent text-accent-foreground font-medium"
+                      "w-full justify-start gap-3",
+                      isActiveRoute(item.path) && "bg-muted"
                     )}
+                    onClick={() => handleNavigation(item.path)}
                   >
                     <Icon className="h-5 w-5" />
-                    <span>{item.label}</span>
-                  </button>
+                    {item.label}
+                  </Button>
                 );
               })}
             </nav>
           </SheetContent>
         </Sheet>
+
+        {/* Logo */}
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent" />
+          <span className="text-xl font-bold tracking-tight">FraudDetect<span className="text-primary">Pro</span></span>
+        </div>
 
         {/* Search */}
         <div className="flex-1 max-w-xl hidden lg:block">
@@ -123,30 +129,14 @@ export function Header() {
                   navigate("/profile");
                 }}
               >
-                Profile Settings
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate("/totp-setup");
-                }}
-              >
-                Security Settings (2FA)
+                Profile
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
-                onClick={async (e) => {
+                onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  try {
-                    await signOut(auth);
-                    // Use window.location for more reliable navigation after sign out
-                    window.location.href = "/signin";
-                  } catch (error) {
-                    console.error("Sign out error:", error);
-                    // Still navigate even if sign out fails
-                    window.location.href = "/signin";
-                  }
+                  setLogoutDialogOpen(true);
                 }}
               >
                 Sign Out
@@ -155,6 +145,37 @@ export function Header() {
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Logout Confirmation Dialog */}
+      <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Sign Out</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to sign out? You will need to sign in again to access your account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                try {
+                  await signOut(auth);
+                  // Use window.location for more reliable navigation after sign out
+                  window.location.href = "/signin";
+                } catch (error) {
+                  console.error("Sign out error:", error);
+                  // Still navigate even if sign out fails
+                  window.location.href = "/signin";
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Sign Out
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </header>
   );
 }

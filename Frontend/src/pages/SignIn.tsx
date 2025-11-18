@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner"; 
 
 
 export default function SignIn() {
@@ -32,6 +33,9 @@ export default function SignIn() {
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
       if (result.user) {
+        // Store flag to show welcome notification on dashboard
+        sessionStorage.setItem("showWelcomeNotification", "true");
+        toast.success("Welcome back! Sign in successful.");
         navigate("/dashboard");
       } else {
         alert("Email authentication failed.");
@@ -45,6 +49,9 @@ export default function SignIn() {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       if (result.user) {
+        // Store flag to show welcome notification on dashboard
+        sessionStorage.setItem("showWelcomeNotification", "true");
+        toast.success("Welcome back! Sign in successful.");
         // Wait a moment for auth state to propagate, then navigate
         setTimeout(() => {
           navigate("/dashboard");
@@ -92,6 +99,9 @@ export default function SignIn() {
       const result = await signInWithPopup(auth, githubProvider);
       console.log("GitHub sign-in successful:", result.user?.email);
       if (result.user) {
+        // Store flag to show welcome notification on dashboard
+        sessionStorage.setItem("showWelcomeNotification", "true");
+        toast.success("Welcome back! Sign in successful.");
         // Wait a moment for auth state to propagate, then navigate
         setTimeout(() => {
           navigate("/dashboard");

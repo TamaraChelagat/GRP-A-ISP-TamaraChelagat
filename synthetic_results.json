@@ -1,0 +1,362 @@
+[
+  {
+    "transaction_id": "SYNTH_000010",
+    "timestamp": "2025-11-18T10:36:52.225889",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 2.4245637556911486e-05,
+    "amount": 65.64939151136647,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000009",
+    "timestamp": "2025-11-18T10:36:52.225839",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 2.0900229931915724e-05,
+    "amount": 154.8002963157281,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000003",
+    "timestamp": "2025-11-18T10:36:52.225321",
+    "true_label": "Ambiguous",
+    "predicted_label": "Legitimate",
+    "probability": 3.517851231057041e-05,
+    "amount": 100.0,
+    "is_correct": false
+  },
+  {
+    "transaction_id": "SYNTH_000008",
+    "timestamp": "2025-11-18T10:36:52.225784",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 4.8302213902691925e-05,
+    "amount": 62.60452721232863,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000006",
+    "timestamp": "2025-11-18T10:36:52.225666",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 7.862581696826965e-05,
+    "amount": 141.11478079030564,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000002",
+    "timestamp": "2025-11-18T10:36:49.073580",
+    "true_label": "Ambiguous",
+    "predicted_label": "Legitimate",
+    "probability": 8.60014703600124e-05,
+    "amount": 50.0,
+    "is_correct": false
+  },
+  {
+    "transaction_id": "SYNTH_000001",
+    "timestamp": "2025-11-18T10:36:45.901367",
+    "true_label": "Fraudulent",
+    "predicted_label": "Fraudulent",
+    "probability": 99.99477861763465,
+    "amount": 1.0,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000005",
+    "timestamp": "2025-11-18T10:36:52.225603",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 3.955882069324919e-05,
+    "amount": 170.50623592910176,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000004",
+    "timestamp": "2025-11-18T10:36:52.225522",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 2.948902988464397e-05,
+    "amount": 150.83812643822105,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000007",
+    "timestamp": "2025-11-18T10:36:52.225728",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 8.170623004843947e-05,
+    "amount": 298.6014720596715,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000018",
+    "timestamp": "2025-11-18T10:38:21.783720",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 5.3765658473518364e-05,
+    "amount": 27.8934698464851,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000016",
+    "timestamp": "2025-11-18T10:38:21.783618",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 8.387244179175468e-05,
+    "amount": 49.2208697100234,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000017",
+    "timestamp": "2025-11-18T10:38:21.783670",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 5.3609342861212404e-05,
+    "amount": 128.33612690753768,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000015",
+    "timestamp": "2025-11-18T10:38:21.783565",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 4.915132573538964e-05,
+    "amount": 111.62756130726595,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000012",
+    "timestamp": "2025-11-18T10:38:21.783295",
+    "true_label": "Ambiguous",
+    "predicted_label": "Fraudulent",
+    "probability": 98.98948191505895,
+    "amount": 50.0,
+    "is_correct": false
+  },
+  {
+    "transaction_id": "SYNTH_000019",
+    "timestamp": "2025-11-18T10:38:21.783769",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 1.990270751169495e-05,
+    "amount": 128.60554820920126,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000011",
+    "timestamp": "2025-11-18T10:38:18.695600",
+    "true_label": "Fraudulent",
+    "predicted_label": "Fraudulent",
+    "probability": 98.80550747711868,
+    "amount": 17.276542981695684,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000020",
+    "timestamp": "2025-11-18T10:38:21.783820",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 7.455447151490566e-05,
+    "amount": 49.83590615612297,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000014",
+    "timestamp": "2025-11-18T10:38:21.783508",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 6.719948639026066e-05,
+    "amount": 47.68254879780572,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000013",
+    "timestamp": "2025-11-18T10:38:21.783443",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 4.8481228986929636e-05,
+    "amount": 39.7680204706766,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000027",
+    "timestamp": "2025-11-18T10:39:57.148288",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 0.0004907800808886026,
+    "amount": 298.6759036903779,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000021",
+    "timestamp": "2025-11-18T10:39:47.609993",
+    "true_label": "Fraudulent",
+    "predicted_label": "Fraudulent",
+    "probability": 99.97242008071878,
+    "amount": 27.050658472012607,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000026",
+    "timestamp": "2025-11-18T10:39:57.148227",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 8.433733000856591e-05,
+    "amount": 107.34962919841878,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000023",
+    "timestamp": "2025-11-18T10:39:54.024543",
+    "true_label": "Ambiguous",
+    "predicted_label": "Legitimate",
+    "probability": 8.806813790821857e-05,
+    "amount": 100.0,
+    "is_correct": false
+  },
+  {
+    "transaction_id": "SYNTH_000025",
+    "timestamp": "2025-11-18T10:39:57.148160",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 5.05644114430955e-05,
+    "amount": 90.109570988924,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000028",
+    "timestamp": "2025-11-18T10:39:57.148342",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 2.158054523230627e-05,
+    "amount": 28.08198050715513,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000024",
+    "timestamp": "2025-11-18T10:39:57.148011",
+    "true_label": "Ambiguous",
+    "predicted_label": "Legitimate",
+    "probability": 35.2488912408669,
+    "amount": 81.9222796214699,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000022",
+    "timestamp": "2025-11-18T10:39:50.798712",
+    "true_label": "Ambiguous",
+    "predicted_label": "Legitimate",
+    "probability": 0.00010592707592247864,
+    "amount": 800.0,
+    "is_correct": false
+  },
+  {
+    "transaction_id": "SYNTH_000029",
+    "timestamp": "2025-11-18T10:39:57.148393",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 5.134143445199394e-05,
+    "amount": 48.263313259465264,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000030",
+    "timestamp": "2025-11-18T10:39:57.148443",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 3.2199185776941405e-05,
+    "amount": 113.96517208216767,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000037",
+    "timestamp": "2025-11-18T10:41:26.576034",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 4.208653763271286e-05,
+    "amount": 382.7406492688513,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000035",
+    "timestamp": "2025-11-18T10:41:26.575926",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 5.604564421446412e-05,
+    "amount": 55.988092052812746,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000038",
+    "timestamp": "2025-11-18T10:41:26.576088",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 4.48400328423304e-05,
+    "amount": 78.64401323977229,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000039",
+    "timestamp": "2025-11-18T10:41:26.576139",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 8.989363019888211e-05,
+    "amount": 109.47923604821213,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000033",
+    "timestamp": "2025-11-18T10:41:26.575796",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 7.05706118727297e-05,
+    "amount": 44.86825952772488,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000034",
+    "timestamp": "2025-11-18T10:41:26.575868",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 2.4163737559016834e-05,
+    "amount": 248.7931515013271,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000040",
+    "timestamp": "2025-11-18T10:41:26.576190",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 1.7290651991667495e-05,
+    "amount": 108.63590353030158,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000036",
+    "timestamp": "2025-11-18T10:41:26.575981",
+    "true_label": "Legitimate",
+    "predicted_label": "Legitimate",
+    "probability": 4.0173927118303254e-05,
+    "amount": 162.17609064667627,
+    "is_correct": true
+  },
+  {
+    "transaction_id": "SYNTH_000032",
+    "timestamp": "2025-11-18T10:41:26.575643",
+    "true_label": "Ambiguous",
+    "predicted_label": "Legitimate",
+    "probability": 72.66407101146805,
+    "amount": 366.6672930726577,
+    "is_correct": false
+  },
+  {
+    "transaction_id": "SYNTH_000031",
+    "timestamp": "2025-11-18T10:41:23.240382",
+    "true_label": "Fraudulent",
+    "predicted_label": "Fraudulent",
+    "probability": 99.99691071701537,
+    "amount": 5.13402558067975,
+    "is_correct": true
+  }
+]

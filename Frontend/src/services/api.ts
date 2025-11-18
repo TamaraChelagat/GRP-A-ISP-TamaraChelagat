@@ -38,8 +38,8 @@ api.interceptors.response.use(
 // API Response Types
 export interface PredictionResponse {
   prediction: 'Fraudulent' | 'Legitimate';
-  probability: number;
-  threshold_used: number;
+  probability: number;  // Percentage (0-100)
+  threshold_used: number;  // Percentage (0-100)
   hybrid_feature_count: number;
   user_email?: string;
 }
@@ -56,6 +56,28 @@ export interface HealthResponse {
   models_loaded: boolean;
   scaler_loaded: boolean;
   firebase_initialized: boolean;
+}
+
+export interface TransactionResponse {
+  id: string;
+  amount: number;
+  timestamp: string;
+  risk_score: number;
+  status: string;
+  prediction: string;
+  features?: number[];
+  hybrid_features?: number[];
+  probability?: number;
+}
+
+export interface SHAPExplanationResponse {
+  transaction_id: string;
+  shap_values: number[];
+  feature_names: string[];
+  feature_values: number[];
+  base_value: number;
+  prediction_probability: number;
+  prediction: string;
 }
 
 // API Service
@@ -90,16 +112,21 @@ export const apiService = {
     return response.data;
   },
 
-  // Get recent transactions
-  async getTransactions(): Promise<Array<{
-    transaction_id: string;
-    amount: number;
-    timestamp: string;
-    risk_score: number;
-    status: string;
-    prediction: string;
-  }>> {
-    const response = await api.get('/api/transactions');
+  // Get transactions
+  async getTransactions(): Promise<TransactionResponse[]> {
+    const response = await api.get<TransactionResponse[]>('/api/transactions');
+    return response.data;
+  },
+
+  // Get single transaction
+  async getTransaction(transactionId: string): Promise<TransactionResponse> {
+    const response = await api.get<TransactionResponse>(`/api/transactions/${transactionId}`);
+    return response.data;
+  },
+
+  // Get SHAP explanation for transaction
+  async getTransactionExplanation(transactionId: string): Promise<SHAPExplanationResponse> {
+    const response = await api.get<SHAPExplanationResponse>(`/api/transactions/${transactionId}/explain`);
     return response.data;
   }
 };

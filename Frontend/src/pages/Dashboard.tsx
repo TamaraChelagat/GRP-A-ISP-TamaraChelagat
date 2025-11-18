@@ -3,57 +3,80 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { TransactionTable, Transaction } from "@/components/dashboard/TransactionTable";
 import { Activity, AlertTriangle, CheckCircle, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
+import { apiService, TransactionResponse } from "@/services/api";
 import { useNavigate } from "react-router-dom";
-import { apiService } from "@/services/api";
-import { API_CONFIG } from "@/config/api";
+import { PieChart, Pie, Cell, Legend } from "recharts";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 export default function Dashboard() {
-  const navigate = useNavigate();
-  type BackendTransaction = {
-    transaction_id: string;
-    amount: number;
-    timestamp: string;
-    risk_score: number;
-    status: string;
-  };
   type Stats = {
     total_predictions: number;
     fraud_detected: number;
     fraud_ratio: number;
     model_accuracy: number;
   };
+  const navigate = useNavigate();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const transactionsPerPage = 15;
+
+  // Convert backend transaction to frontend Transaction format
+  const convertTransaction = (backendTx: TransactionResponse): Transaction => {
+    const date = new Date(backendTx.timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    let timeAgo = "";
+    if (diffMins < 1) timeAgo = "Just now";
+    else if (diffMins < 60) timeAgo = `${diffMins}m ago`;
+    else if (diffMins < 1440) timeAgo = `${Math.floor(diffMins / 60)}h ago`;
+    else timeAgo = `${Math.floor(diffMins / 1440)}d ago`;
+
+    return {
+      id: backendTx.id,
+      amount: backendTx.amount,
+      time: timeAgo,
+      riskScore: backendTx.risk_score,
+      status: backendTx.status,
+    };
+  };
 
   useEffect(() => {
+    // Check if we should show welcome notification after successful login
+    const showWelcome = sessionStorage.getItem("showWelcomeNotification");
+    if (showWelcome === "true") {
+      // Clear the flag so it doesn't show again on refresh
+      sessionStorage.removeItem("showWelcomeNotification");
+      // Show welcome notification at the top
+      setTimeout(() => {
+        toast.success("Welcome to FraudDetectPro Dashboard!", {
+          duration: 4000,
+          position: "top-center",
+        });
+      }, 500);
+    }
+
     let initialLoad = true;
     const fetchData = async () => {
       if (initialLoad) setLoading(true);
       try {
-        // Fetch stats using the API service (handles auth automatically)
-        const statsData = await apiService.getStats();
+        // Fetch stats and transactions using the API service (handles auth automatically)
+        const [statsData, transactionsData] = await Promise.all([
+          apiService.getStats(),
+          apiService.getTransactions(),
+        ]);
         setStats(statsData);
         
-        // Fetch transactions from API
-        try {
-          const transactionsData = await apiService.getTransactions();
-          // Convert backend format to frontend format
-          const formattedTransactions: Transaction[] = transactionsData.map((t: BackendTransaction) => ({
-            id: t.transaction_id,
-            amount: t.amount,
-            time: new Date(t.timestamp).toLocaleString(),
-            riskScore: t.risk_score,
-            status: t.status.toLowerCase() as "flagged" | "review" | "clear"
-          }));
-          setTransactions(formattedTransactions);
-        } catch (transError) {
-          console.warn("Failed to fetch transactions:", transError);
-          setTransactions([]);
-        }
+        // Convert backend transactions to frontend format
+        const convertedTransactions = transactionsData.map(convertTransaction);
+        setTransactions(convertedTransactions);
         
         setError(null);
       } catch (e: unknown) {
@@ -82,6 +105,7 @@ export default function Dashboard() {
   }, []);
 
   const handleViewDetails = (id: string) => {
+    navigate(`/transactions/${id}`, { state: { from: "/dashboard" } });
     toast.info(`Viewing details for transaction ${id.slice(0, 12)}...`);
   };
 
@@ -89,43 +113,47 @@ export default function Dashboard() {
     toast.warning(`Transaction ${id.slice(0, 12)}... flagged for review`);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="text-muted-foreground">Loading dashboard...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
-  if (error) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center space-y-4">
-            <AlertTriangle className="h-12 w-12 text-destructive mx-auto" />
-            <div>
-              <h2 className="text-xl font-semibold text-destructive">Error Loading Dashboard</h2>
-              <p className="text-muted-foreground mt-2">{error}</p>
-              <Button 
-                onClick={() => window.location.reload()} 
-                className="mt-4"
-                variant="outline"
-              >
-                Retry
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Calculate risk distribution for pie chart
+  const riskDistribution = useMemo(() => {
+    const highRisk = transactions.filter((t) => t.riskScore >= 70).length;
+    const mediumRisk = transactions.filter((t) => t.riskScore >= 40 && t.riskScore < 70).length;
+    const lowRisk = transactions.filter((t) => t.riskScore < 40).length;
+
+    return [
+      { name: "High Risk", value: highRisk, color: "#ef4444" }, // red-500
+      { name: "Medium Risk", value: mediumRisk, color: "#f59e0b" }, // amber-500
+      { name: "Low Risk", value: lowRisk, color: "#10b981" }, // emerald-500
+    ];
+  }, [transactions]);
+
+  const chartConfig = {
+    "High Risk": {
+      label: "High Risk (70-100)",
+      color: "#ef4444",
+    },
+    "Medium Risk": {
+      label: "Medium Risk (40-69)",
+      color: "#f59e0b",
+    },
+    "Low Risk": {
+      label: "Low Risk (0-39)",
+      color: "#10b981",
+    },
+  };
+
+  // Pagination calculations
+  const totalPages = Math.ceil(transactions.length / transactionsPerPage);
+  const startIndex = (currentPage - 1) * transactionsPerPage;
+  const endIndex = startIndex + transactionsPerPage;
+  const paginatedTransactions = transactions.slice(startIndex, endIndex);
+
+  // Reset to page 1 when transactions change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [transactions.length]);
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading dashboard...</div>;
+  if (error) return <div className="min-h-screen flex items-center justify-center text-destructive">Error: {error}</div>;
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -169,17 +197,34 @@ export default function Dashboard() {
               <Button variant="outline">Export</Button>
             </div>
             <TransactionTable
-              transactions={transactions}
+              transactions={paginatedTransactions}
               onViewDetails={handleViewDetails}
               onFlag={handleFlag}
             />
             <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <p>Showing {transactions.length} of {stats ? stats.total_predictions.toLocaleString() : "-"} transactions</p>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled>
+              <p>
+                Showing {transactions.length > 0 ? startIndex + 1 : 0}-
+                {Math.min(endIndex, transactions.length)} of {transactions.length} transactions
+                {stats && ` (Total: ${stats.total_predictions.toLocaleString()})`}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
                   Previous
                 </Button>
-                <Button variant="outline" size="sm">
+                <span className="text-xs">
+                  Page {currentPage} of {totalPages || 1}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage >= totalPages || transactions.length === 0}
+                >
                   Next
                 </Button>
               </div>
@@ -189,68 +234,98 @@ export default function Dashboard() {
           <div className="space-y-6">
             <div>
               <h3 className="text-lg font-semibold mb-4">Quick Insights</h3>
-              {/* High Risk Alert - Dynamic */}
-              {(() => {
-                const highRiskCount = transactions.filter(t => t.riskScore >= 85).length;
-                if (highRiskCount > 0) {
-                  return (
-                    <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 mb-4">
-                      <div className="flex items-start gap-3">
-                        <div className="h-10 w-10 rounded-full bg-destructive/20 flex items-center justify-center flex-shrink-0">
-                          <AlertTriangle className="h-5 w-5 text-destructive" />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-sm mb-1">High-Risk Alert</h4>
-                          <p className="text-xs text-muted-foreground mb-3">
-                            {highRiskCount} transaction{highRiskCount !== 1 ? 's' : ''} flagged with risk scores above 85%
-                          </p>
-                          <Button size="sm" variant="destructive" className="h-8">
-                            Review Now
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-                return null;
-              })()}
-              {/* Trend Chart Placeholder */}
-              <div className="rounded-lg border border-border bg-card p-6">
-                <h4 className="font-semibold mb-4">Fraud Trend (30 Days)</h4>
-                <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">
-                  Chart visualization area
+              {/* High Risk Alert */}
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 mb-4">
+                <div className="flex items-start gap-3">
+                  <div className="h-10 w-10 rounded-full bg-destructive/20 flex items-center justify-center flex-shrink-0">
+                    <AlertTriangle className="h-5 w-5 text-destructive" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-sm mb-1">High-Risk Alert</h4>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      5 transactions flagged in the last hour with risk scores above 85%
+                    </p>
+                    <Button size="sm" variant="destructive" className="h-8">
+                      Review Now
+                    </Button>
+                  </div>
                 </div>
+              </div>
+              {/* Risk Distribution Pie Chart */}
+              <div className="rounded-lg border border-border bg-card p-6">
+                <h4 className="font-semibold mb-4">Transaction Risk Distribution</h4>
+                {transactions.length === 0 ? (
+                  <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">
+                    No transactions to display
+                  </div>
+                ) : (
+                  <div className="w-full h-64 overflow-hidden">
+                    <ChartContainer config={chartConfig} className="h-full w-full">
+                      <PieChart>
+                        <ChartTooltip 
+                          content={<ChartTooltipContent />}
+                          formatter={(value: number, name: string) => [
+                            `${value} transactions`,
+                            chartConfig[name as keyof typeof chartConfig]?.label || name
+                          ]}
+                        />
+                        <Pie
+                          data={riskDistribution}
+                          dataKey="value"
+                          nameKey="name"
+                          cx="50%"
+                          cy="45%"
+                          outerRadius={70}
+                          label={({ value, percent }) => 
+                            value > 0 ? `${(percent * 100).toFixed(1)}%` : ""
+                          }
+                          labelLine={false}
+                        >
+                          {riskDistribution.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Legend
+                          verticalAlign="bottom"
+                          height={36}
+                          formatter={(value) => {
+                            const config = chartConfig[value as keyof typeof chartConfig];
+                            return config?.label || value;
+                          }}
+                        />
+                      </PieChart>
+                    </ChartContainer>
+                  </div>
+                )}
               </div>
             </div>
             {/* Top High-Risk Transactions */}
             <div>
               <h4 className="font-semibold mb-4">Top High-Risk Today</h4>
               <div className="space-y-3">
-                {transactions.filter((t) => t.riskScore > 70).length > 0 ? (
+                {transactions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No high-risk transactions found</p>
+                ) : (
                   transactions
                     .filter((t) => t.riskScore > 70)
                     .slice(0, 3)
                     .map((t) => (
-                      <div
-                        key={t.id}
-                        className="rounded-lg border-l-4 border-destructive bg-card p-4 hover:bg-muted/30 transition-colors cursor-pointer"
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-mono text-xs text-muted-foreground">
-                            {t.id.slice(0, 12)}...
-                          </span>
-                          <span className="text-sm font-bold text-destructive">{t.riskScore.toFixed(1)}%</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold">${t.amount.toLocaleString()}</span>
-                          <span className="text-xs text-muted-foreground">{t.time}</span>
-                        </div>
+                    <div
+                      key={t.id}
+                      className="rounded-lg border-l-4 border-destructive bg-card p-4 hover:bg-muted/30 transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-mono text-xs text-muted-foreground">
+                          {t.id.slice(0, 12)}...
+                        </span>
+                        <span className="text-sm font-bold text-destructive">{t.riskScore}%</span>
                       </div>
-                    ))
-                ) : (
-                  <div className="rounded-lg border border-border bg-card p-4 text-center text-sm text-muted-foreground">
-                    No high-risk transactions found
-                  </div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold">${t.amount.toLocaleString()}</span>
+                        <span className="text-xs text-muted-foreground">{t.time}</span>
+                      </div>
+                    </div>
+                  ))
                 )}
               </div>
             </div>

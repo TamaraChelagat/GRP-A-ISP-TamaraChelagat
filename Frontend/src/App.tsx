@@ -9,9 +9,10 @@ import OTPSignIn from "./pages/OTPSignIn";
 import TOTPSetup from "./pages/TOTPSetup";
 import Dashboard from "./pages/Dashboard";
 import TransactionHistory from "./pages/TransactionHistory";
+import ViewTransactionDetails from "./pages/ViewTransactionDetails";
 import ExplainabilityCenter from "./pages/ExplainabilityCenter";
-import Profile from "./pages/Profile";
 import KnowledgeBase from "./pages/KnowledgeBase";
+import Profile from "./pages/Profile";
 import ManualPrediction from "./pages/ManualPrediction";
 import NotFound from "./pages/NotFound";
 import LandingPage from "./pages/LandingPage";
@@ -32,11 +33,11 @@ const App = () => (
           <Route path="/totp-setup" element={<TOTPSetup />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/transactions" element={<TransactionHistory />} />
+          <Route path="/transactions/:id" element={<ViewTransactionDetails />} />
           <Route path="/explainability" element={<ExplainabilityCenter />} />
-          <Route path="/profile" element={<Profile />} />
           <Route path="/knowledge" element={<KnowledgeBase />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/manual-prediction" element={<ManualPrediction />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

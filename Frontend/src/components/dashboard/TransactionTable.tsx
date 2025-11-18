@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RiskScore } from "./RiskScore";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 export interface Transaction {
   id: string;
@@ -19,9 +20,22 @@ interface TransactionTableProps {
 }
 
 export function TransactionTable({ transactions, onViewDetails, onFlag }: TransactionTableProps) {
+  const navigate = useNavigate();
+
   const copyTransactionId = (id: string) => {
     navigator.clipboard.writeText(id);
     toast.success("Transaction ID copied");
+  };
+
+  const handleViewClick = (id: string) => {
+    if (onViewDetails) {
+      onViewDetails(id);
+    } else {
+      // Try to determine the return path from the current location
+      const currentPath = window.location.pathname;
+      const returnPath = currentPath.includes("/dashboard") ? "/dashboard" : "/transactions";
+      navigate(`/transactions/${id}`, { state: { from: returnPath } });
+    }
   };
 
   const getStatusBadge = (status: Transaction["status"]) => {
@@ -102,7 +116,8 @@ export function TransactionTable({ transactions, onViewDetails, onFlag }: Transa
                       size="icon"
                       variant="ghost"
                       className="h-8 w-8"
-                      onClick={() => onViewDetails?.(transaction.id)}
+                      onClick={() => handleViewClick(transaction.id)}
+                      title="View transaction details"
                     >
                       <Eye className="h-4 w-4" />
                     </Button>

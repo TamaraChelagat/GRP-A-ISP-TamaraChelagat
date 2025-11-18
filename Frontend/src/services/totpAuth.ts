@@ -35,12 +35,36 @@ export const totpAuthService = {
       const session = await multiFactorUser.getSession();
       const totpSecret = TotpMultiFactorGenerator.generateSecret(session);
       
-      // Generate QR code URL manually using otpauth:// format
-      // Firebase's TotpMultiFactorGenerator doesn't have a generateQrCodeUrl method
-      // We generate the otpauth:// URL which is the standard format for TOTP
-      const issuer = encodeURIComponent('FraudDetectPro');
-      const accountName = encodeURIComponent(user.email || 'user@example.com');
-      const qrCodeUrl = `otpauth://totp/${issuer}:${accountName}?secret=${totpSecret}&issuer=${issuer}`;
+      // Generate QR code URL for authenticator apps
+      // The method might be generateQRCodeURL (camelCase) or we need to construct it manually
+      let qrCodeUrl: string;
+      try {
+        // Try the method if it exists
+        if (typeof TotpMultiFactorGenerator.generateQrCodeUrl === 'function') {
+          qrCodeUrl = TotpMultiFactorGenerator.generateQrCodeUrl(
+            totpSecret,
+            user.email || 'user@example.com',
+            'FraudDetectPro'
+          );
+        } else if (typeof (TotpMultiFactorGenerator as any).generateQRCodeURL === 'function') {
+          // Try alternative camelCase name
+          qrCodeUrl = (TotpMultiFactorGenerator as any).generateQRCodeURL(
+            totpSecret,
+            user.email || 'user@example.com',
+            'FraudDetectPro'
+          );
+        } else {
+          // Generate QR code URL manually using otpauth:// format
+          const issuer = encodeURIComponent('FraudDetectPro');
+          const accountName = encodeURIComponent(user.email || 'user@example.com');
+          qrCodeUrl = `otpauth://totp/${issuer}:${accountName}?secret=${totpSecret}&issuer=${issuer}`;
+        }
+      } catch (qrError) {
+        // Fallback: generate QR code URL manually
+        const issuer = encodeURIComponent('FraudDetectPro');
+        const accountName = encodeURIComponent(user.email || 'user@example.com');
+        qrCodeUrl = `otpauth://totp/${issuer}:${accountName}?secret=${totpSecret}&issuer=${issuer}`;
+      }
       
       return {
         success: true,

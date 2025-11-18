@@ -6,24 +6,71 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card } from "@/components/ui/card";
 import { Search, Download, Filter } from "lucide-react";
 import { toast } from "sonner";
-
-// Extended mock data
-const mockTransactions: Transaction[] = [
-  { id: "tx_1a2b3c4d5e6f7g8h", amount: 1250, time: "2m ago", riskScore: 85, status: "flagged" },
-  { id: "tx_2b3c4d5e6f7g8h9i", amount: 450, time: "5m ago", riskScore: 32, status: "clear" },
-  { id: "tx_3c4d5e6f7g8h9i0j", amount: 2890, time: "8m ago", riskScore: 68, status: "review" },
-  { id: "tx_4d5e6f7g8h9i0j1k", amount: 175, time: "12m ago", riskScore: 15, status: "clear" },
-  { id: "tx_5e6f7g8h9i0j1k2l", amount: 3420, time: "15m ago", riskScore: 92, status: "flagged" },
-  { id: "tx_6f7g8h9i0j1k2l3m", amount: 680, time: "18m ago", riskScore: 48, status: "clear" },
-  { id: "tx_7g8h9i0j1k2l3m4n", amount: 1560, time: "22m ago", riskScore: 73, status: "review" },
-  { id: "tx_8h9i0j1k2l3m4n5o", amount: 290, time: "25m ago", riskScore: 28, status: "clear" },
-  { id: "tx_9i0j1k2l3m4n5o6p", amount: 5200, time: "30m ago", riskScore: 95, status: "flagged" },
-  { id: "tx_0j1k2l3m4n5o6p7q", amount: 125, time: "35m ago", riskScore: 18, status: "clear" },
-];
+import { useNavigate } from "react-router-dom";
+import { useEffect, useState, useMemo } from "react";
+import { apiService, TransactionResponse } from "@/services/api";
 
 export default function TransactionHistory() {
+  const navigate = useNavigate();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const transactionsPerPage = 15;
+
+  // Convert backend transaction to frontend Transaction format
+  const convertTransaction = (backendTx: TransactionResponse): Transaction => {
+    const date = new Date(backendTx.timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    let timeAgo = "";
+    if (diffMins < 1) timeAgo = "Just now";
+    else if (diffMins < 60) timeAgo = `${diffMins}m ago`;
+    else if (diffMins < 1440) timeAgo = `${Math.floor(diffMins / 60)}h ago`;
+    else timeAgo = `${Math.floor(diffMins / 1440)}d ago`;
+
+    return {
+      id: backendTx.id,
+      amount: backendTx.amount,
+      time: timeAgo,
+      riskScore: backendTx.risk_score,
+      status: backendTx.status as "clear" | "flagged" | "review",
+    };
+  };
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        setLoading(true);
+        const transactionsData = await apiService.getTransactions();
+        const convertedTransactions = transactionsData.map(convertTransaction);
+        setTransactions(convertedTransactions);
+        setError(null);
+      } catch (e: unknown) {
+        console.error("Failed to fetch transactions:", e);
+        if (e instanceof Error) {
+          setError(e.message || "Failed to fetch transactions");
+        } else {
+          setError("Failed to fetch transactions");
+        }
+        setTransactions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTransactions();
+    // Refresh every 5 seconds for real-time updates
+    const intervalId = setInterval(fetchTransactions, 5000);
+    return () => clearInterval(intervalId);
+  }, []);
+
   const handleViewDetails = (id: string) => {
-    toast.info(`Viewing details for transaction ${id.slice(0, 12)}...`);
+    navigate(`/transactions/${id}`, { state: { from: "/transactions" } });
   };
 
   const handleFlag = (id: string) => {
@@ -33,6 +80,39 @@ export default function TransactionHistory() {
   const handleExport = () => {
     toast.success("Transaction history exported successfully");
   };
+
+  // Filter transactions based on search and status
+  const filteredTransactions = useMemo(() => {
+    let filtered = transactions;
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (tx) =>
+          tx.id.toLowerCase().includes(query) ||
+          tx.amount.toString().includes(query)
+      );
+    }
+
+    // Apply status filter
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((tx) => tx.status === statusFilter);
+    }
+
+    return filtered;
+  }, [transactions, searchQuery, statusFilter]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredTransactions.length / transactionsPerPage);
+  const startIndex = (currentPage - 1) * transactionsPerPage;
+  const endIndex = startIndex + transactionsPerPage;
+  const paginatedTransactions = filteredTransactions.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -58,10 +138,12 @@ export default function TransactionHistory() {
             <Input 
               placeholder="Search by transaction ID or amount..." 
               className="pl-10"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           
-          <Select defaultValue="all">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger>
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -96,31 +178,62 @@ export default function TransactionHistory() {
       </Card>
 
       {/* Transaction Table */}
-      <TransactionTable
-        transactions={mockTransactions}
-        onViewDetails={handleViewDetails}
-        onFlag={handleFlag}
-      />
+      {loading ? (
+        <Card className="p-8">
+          <div className="text-center text-muted-foreground">Loading transactions...</div>
+        </Card>
+      ) : error ? (
+        <Card className="p-8">
+          <div className="text-center text-destructive">Error: {error}</div>
+        </Card>
+      ) : (
+        <>
+          <TransactionTable
+            transactions={paginatedTransactions}
+            onViewDetails={handleViewDetails}
+            onFlag={handleFlag}
+          />
 
-      {/* Pagination */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-        <p className="text-sm text-muted-foreground">
-          Showing 1-10 of 284,807 transactions
-        </p>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" disabled>
-            Previous
-          </Button>
-          <Button variant="outline" size="sm">1</Button>
-          <Button variant="outline" size="sm">2</Button>
-          <Button variant="outline" size="sm">3</Button>
-          <span className="flex items-center px-2">...</span>
-          <Button variant="outline" size="sm">28481</Button>
-          <Button variant="outline" size="sm">
-            Next
-          </Button>
-        </div>
-        </div>
+          {/* Pagination */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-muted-foreground">
+              {filteredTransactions.length > 0 ? (
+                <>
+                  Showing {startIndex + 1}-{Math.min(endIndex, filteredTransactions.length)} of{" "}
+                  {filteredTransactions.length} transactions
+                  {filteredTransactions.length !== transactions.length &&
+                    ` (filtered from ${transactions.length} total)`}
+                </>
+              ) : (
+                "No transactions found"
+              )}
+            </p>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <span className="text-xs">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage >= totalPages || filteredTransactions.length === 0}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
         </div>
       </main>
     </div>

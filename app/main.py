@@ -2,10 +2,7 @@ from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional
-from collections import deque
-from datetime import datetime
-import uuid
+from typing import Optional, List
 import numpy as np
 import joblib
 import tensorflow as tf
@@ -13,6 +10,9 @@ import os
 import firebase_admin
 from firebase_admin import credentials, auth
 import logging
+from collections import deque
+from datetime import datetime
+import uuid
 
 # =====================================================
 # FraudDetectPro - FastAPI Backend with Firebase Auth
@@ -21,6 +21,14 @@ import logging
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Check for SHAP availability
+try:
+    import shap
+    SHAP_AVAILABLE = True
+except ImportError:
+    SHAP_AVAILABLE = False
+    logger.warning("SHAP not available - explainability endpoints will be limited")
 
 app = FastAPI(title="FraudDetectPro API", version="2.2")
 
@@ -38,21 +46,36 @@ print("🔹 Starting FraudDetectPro API...")
 # =====================================================
 # Initialize Firebase Admin
 # =====================================================
+FIREBASE_INITIALIZED = False
 try:
     if not firebase_admin._apps:
-        # Look for firebase.json in project root
-        firebase_cred_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), 
-            "firebase.json"
-        )
-        if os.path.exists(firebase_cred_path):
+        # Try multiple paths for firebase.json
+        possible_paths = [
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), "firebase.json"),  # project root
+            "firebase.json",  # current directory
+            os.path.expanduser("~/.firebase/frauddetectpro.json"),  # user home directory
+        ]
+        
+        firebase_cred_path = None
+        for path in possible_paths:
+            if os.path.exists(path):
+                firebase_cred_path = path
+                break
+        
+        if firebase_cred_path:
             cred = credentials.Certificate(firebase_cred_path)
             firebase_admin.initialize_app(cred)
-            logger.info("✅ Firebase Admin initialized")
+            FIREBASE_INITIALIZED = True
+            logger.info(f"✅ Firebase Admin initialized from: {firebase_cred_path}")
         else:
-            logger.warning("⚠️ firebase.json not found - authentication will fail")
+            logger.error("❌ firebase.json not found in any of these locations:")
+            for path in possible_paths:
+                logger.error(f"   - {path}")
+            logger.error("⚠️ Authentication endpoints will fail without Firebase initialization")
+            logger.error("💡 Please place your firebase.json service account key in the project root")
 except Exception as e:
     logger.error(f"❌ Firebase initialization failed: {e}")
+    FIREBASE_INITIALIZED = False
 
 # =====================================================
 # Paths
@@ -132,6 +155,12 @@ except Exception as e:
 # =====================================================
 async def verify_firebase_token(authorization: Optional[str] = Header(None)):
     """Verify Firebase ID token from Authorization header"""
+    if not FIREBASE_INITIALIZED:
+        raise HTTPException(
+            status_code=500, 
+            detail="Firebase not initialized. Please configure firebase.json service account key."
+        )
+    
     if not authorization:
         raise HTTPException(status_code=401, detail="Authorization header missing")
     
@@ -160,8 +189,8 @@ class Transaction(BaseModel):
 
 class PredictionResponse(BaseModel):
     prediction: str
-    probability: float
-    threshold_used: float
+    probability: float  # Percentage (0-100)
+    threshold_used: float  # Percentage (0-100)
     hybrid_feature_count: int
     user_email: Optional[str] = None
 
@@ -171,14 +200,6 @@ class StatsResponse(BaseModel):
     fraud_ratio: float
     model_accuracy: float
 
-class TransactionResponse(BaseModel):
-    transaction_id: str
-    amount: float
-    timestamp: str
-    risk_score: float
-    status: str
-    prediction: str
-
 # =====================================================
 # In-memory stats (replace with database in production)
 # =====================================================
@@ -187,11 +208,16 @@ stats = {
     "fraud_detected": 0
 }
 
-# =====================================================
-# In-memory transaction storage (replace with database in production)
-# =====================================================
-# Store last 100 transactions
-transactions_store = deque(maxlen=100)
+# Store recent transactions in memory (last 100)
+transactions_store: deque = deque(maxlen=100)
+
+class TransactionResponse(BaseModel):
+    id: str
+    amount: float
+    timestamp: str
+    risk_score: float
+    status: str
+    prediction: str
 
 # =====================================================
 # Endpoints
@@ -286,32 +312,33 @@ async def predict(
 
         prediction = int(probs >= optimal_threshold)
         label = "Fraudulent" if prediction == 1 else "Legitimate"
-        probability = float(probs[0])
+        risk_score = float(probs[0] * 100)
 
         # Update stats
         stats["total_predictions"] += 1
         if prediction == 1:
             stats["fraud_detected"] += 1
 
-        # Extract amount from features (last feature)
-        amount = float(X[0, -1]) if X.shape[0] > 0 else 0.0
-
-        # Store transaction
-        transaction_id = f"TXN_{uuid.uuid4().hex[:12].upper()}"
+        # Store transaction in memory (with original features for SHAP explanations)
+        transaction_id = str(uuid.uuid4())
+        amount = float(X[0, -1]) if X.shape[0] > 0 else 0.0  # Last feature is Amount
         transaction_data = {
-            "transaction_id": transaction_id,
+            "id": transaction_id,
             "amount": amount,
             "timestamp": datetime.now().isoformat(),
-            "risk_score": probability * 100,  # Convert to percentage
-            "status": "Flagged" if probability >= optimal_threshold else ("Under Review" if probability >= 0.5 else "Clear"),
-            "prediction": label
+            "risk_score": risk_score,
+            "status": "flagged" if risk_score >= 70 else ("review" if risk_score >= 50 else "clear"),
+            "prediction": label,
+            "features": X[0].tolist(),  # Store original features for SHAP
+            "hybrid_features": X_hybrid[0].tolist(),  # Store hybrid features for SHAP
+            "probability": float(probs[0])
         }
         transactions_store.append(transaction_data)
 
         return PredictionResponse(
             prediction=label,
-            probability=probability,
-            threshold_used=float(optimal_threshold),
+            probability=float(probs[0] * 100),  # Convert to percentage (0-100)
+            threshold_used=float(optimal_threshold * 100),  # Convert threshold to percentage
             hybrid_feature_count=int(X_hybrid.shape[1]),
             user_email=user.get('email')
         )
@@ -342,16 +369,85 @@ async def get_user_profile(user: dict = Depends(verify_firebase_token)):
         "email_verified": user.get("email_verified", False)
     }
 
-@app.get("/api/transactions", response_model=list[TransactionResponse])
+@app.get("/api/transactions", response_model=List[TransactionResponse])
 async def get_transactions(user: dict = Depends(optional_auth)):
     """Get recent transactions"""
     logger.info(f"Transactions requested by: {user.get('email')}")
-    
-    # Convert deque to list and reverse to show most recent first
+    # Return transactions sorted by timestamp (most recent first)
     transactions_list = list(transactions_store)
-    transactions_list.reverse()
-    
+    transactions_list.sort(key=lambda x: x["timestamp"], reverse=True)
     return transactions_list
+
+@app.get("/api/transactions/{transaction_id}")
+async def get_transaction(transaction_id: str, user: dict = Depends(optional_auth)):
+    """Get a specific transaction by ID"""
+    logger.info(f"Transaction {transaction_id} requested by: {user.get('email')}")
+    transaction = next((t for t in transactions_store if t["id"] == transaction_id), None)
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    return transaction
+
+class SHAPExplanationResponse(BaseModel):
+    transaction_id: str
+    shap_values: List[float]
+    feature_names: List[str]
+    feature_values: List[float]
+    base_value: float
+    prediction_probability: float
+    prediction: str
+
+@app.get("/api/transactions/{transaction_id}/explain", response_model=SHAPExplanationResponse)
+async def explain_transaction(transaction_id: str, user: dict = Depends(optional_auth)):
+    """Get SHAP explanation for a specific transaction"""
+    logger.info(f"SHAP explanation requested for {transaction_id} by: {user.get('email')}")
+    
+    # Find transaction
+    transaction = next((t for t in transactions_store if t["id"] == transaction_id), None)
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    
+    if not SHAP_AVAILABLE:
+        raise HTTPException(status_code=503, detail="SHAP library not available")
+    
+    try:
+        # Get hybrid features (for explanation)
+        X_hybrid = np.array([transaction["hybrid_features"]], dtype=float)
+        
+        # Use XGBoost for SHAP (TreeExplainer is fast and accurate)
+        explainer = shap.TreeExplainer(xgb_model)
+        shap_values = explainer.shap_values(X_hybrid)
+        
+        # Get feature names
+        feature_names = metadata.get('feature_names', [f'Feature_{i}' for i in range(X_hybrid.shape[1])])
+        if len(feature_names) < X_hybrid.shape[1]:
+            # Add NN feature names if needed
+            nn_feature_count = X_hybrid.shape[1] - len(feature_names)
+            feature_names = feature_names + [f'NN_Feature_{i}' for i in range(nn_feature_count)]
+        
+        # Handle binary classification SHAP values
+        if isinstance(shap_values, list) and len(shap_values) > 1:
+            shap_values = shap_values[1]  # Use class 1 (fraud) SHAP values
+        
+        # Flatten if needed
+        if shap_values.ndim > 1:
+            shap_values = shap_values[0]
+        
+        base_value = float(explainer.expected_value)
+        if isinstance(base_value, np.ndarray):
+            base_value = float(base_value[1] if len(base_value) > 1 else base_value[0])
+        
+        return SHAPExplanationResponse(
+            transaction_id=transaction_id,
+            shap_values=shap_values.tolist() if isinstance(shap_values, np.ndarray) else shap_values,
+            feature_names=feature_names[:len(shap_values)] if len(feature_names) >= len(shap_values) else [f'Feature_{i}' for i in range(len(shap_values))],
+            feature_values=X_hybrid[0].tolist(),
+            base_value=base_value,
+            prediction_probability=transaction.get("probability", transaction.get("risk_score", 0) / 100),
+            prediction=transaction.get("prediction", "Unknown")
+        )
+    except Exception as e:
+        logger.error(f"SHAP explanation failed: {e}")
+        raise HTTPException(status_code=500, detail=f"SHAP explanation failed: {str(e)}")
 
 @app.get("/debug-model-info")
 def debug_model_info():

@@ -14,7 +14,6 @@ export default function TOTPSetup() {
   const [step, setStep] = useState<"start" | "qr" | "verify">("start");
   const [totpSecret, setTotpSecret] = useState<string>("");
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
-  const [qrCodeError, setQrCodeError] = useState(false);
   const [totpCode, setTotpCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -230,30 +229,19 @@ export default function TOTPSetup() {
                 <div className="flex justify-center">
                   {qrCodeUrl ? (
                     <div className="space-y-2">
-                      {!qrCodeError ? (
-                        <>
-                          {/* Use QR code API service to generate QR code image */}
-                          <img 
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(qrCodeUrl)}`}
-                            alt="TOTP QR Code" 
-                            className="w-64 h-64 border rounded-lg mx-auto"
-                            onError={(e) => {
-                              console.error('QR code image failed to load - service may be blocked');
-                              setQrCodeError(true);
-                            }}
-                          />
-                          <p className="text-xs text-muted-foreground text-center">
-                            Scan with your authenticator app
-                          </p>
-                        </>
-                      ) : (
-                        <div className="w-64 h-64 border rounded-lg flex flex-col items-center justify-center p-4 space-y-2 bg-muted/50">
-                          <QrCode className="h-8 w-8 text-muted-foreground" />
-                          <p className="text-xs text-muted-foreground text-center">
-                            QR code service blocked. Use manual entry below.
-                          </p>
-                        </div>
-                      )}
+                      {/* Use QR code API service to generate QR code image */}
+                      <img 
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(qrCodeUrl)}`}
+                        alt="TOTP QR Code" 
+                        className="w-64 h-64 border rounded-lg mx-auto"
+                        onError={(e) => {
+                          console.error('QR code image failed to load');
+                          // Fallback: show the otpauth URL for manual entry
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground text-center">
+                        Scan with your authenticator app
+                      </p>
                     </div>
                   ) : (
                     <div className="w-64 h-64 border rounded-lg flex items-center justify-center">

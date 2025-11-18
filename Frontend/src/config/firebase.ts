@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, GithubAuthProvider, PhoneAuthProvider, TotpMultiFactorGenerator } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
 
 // Get these values from Firebase Console
 // Firebase Console → Project Settings → General → Your apps → Web app
@@ -15,6 +16,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+export const db = getFirestore(app);
 
 // Initialize auth providers
 export const googleProvider = new GoogleAuthProvider();
