@@ -23,14 +23,37 @@ GENERATION_INTERVAL = 60  # seconds (1 minute)
 BATCH_SIZE = 20  # Generate 10 transactions per batch
 FRAUD_RATIO = 0.05  # 5% fraud rate (can be adjusted via --fraud-ratio argument)
 
-# Setup logging
+# Setup logging with UTF-8 support for Windows console
+import sys
+import io
+
+# Create a StreamHandler that handles encoding errors gracefully
+class SafeStreamHandler(logging.StreamHandler):
+    """StreamHandler that handles Unicode encoding errors gracefully"""
+    def emit(self, record):
+        try:
+            super().emit(record)
+        except UnicodeEncodeError:
+            # If encoding fails, replace problematic characters
+            try:
+                msg = self.format(record)
+                # Replace common emojis with ASCII equivalents
+                msg = msg.replace('✅', '[OK]').replace('❌', '[X]')
+                msg = msg.replace('🔍', '[?]').replace('⚠️', '[!]')
+                stream = self.stream
+                stream.write(msg + self.terminator)
+                self.flush()
+            except Exception:
+                self.handleError(record)
+
+# Create handlers
+file_handler = logging.FileHandler('synthetic_generator.log', encoding='utf-8')
+stream_handler = SafeStreamHandler(sys.stdout)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('synthetic_generator.log'),
-        logging.StreamHandler()
-    ]
+    handlers=[file_handler, stream_handler]
 )
 logger = logging.getLogger(__name__)
 
