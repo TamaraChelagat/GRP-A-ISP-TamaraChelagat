@@ -1,7 +1,7 @@
 import { Header } from "@/components/layout/Header";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { TransactionTable, Transaction } from "@/components/dashboard/TransactionTable";
-import { Activity, AlertTriangle, CheckCircle, TrendingUp } from "lucide-react";
+import { Activity, AlertTriangle, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -16,7 +16,6 @@ export default function Dashboard() {
     total_predictions: number;
     fraud_detected: number;
     fraud_ratio: number;
-    model_accuracy: number;
   };
   const navigate = useNavigate();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -90,8 +89,7 @@ export default function Dashboard() {
         setStats({
           total_predictions: 0,
           fraud_detected: 0,
-          fraud_ratio: 0,
-          model_accuracy: 0
+          fraud_ratio: 0
         });
         setTransactions([]);
       } finally {
@@ -159,7 +157,7 @@ export default function Dashboard() {
       <Header />
       <main className="container px-4 py-8">
         {/* Hero Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <StatCard
             title="Total Transactions"
             value={stats ? stats.total_predictions.toLocaleString() : "-"}
@@ -177,12 +175,6 @@ export default function Dashboard() {
             value={stats ? `${stats.fraud_ratio.toFixed(3)}%` : "-"}
             trend={{ value: "", isPositive: true }}
             icon={<TrendingUp className="h-6 w-6" />}
-          />
-          <StatCard
-            title="Model Accuracy"
-            value={stats ? `${stats.model_accuracy.toFixed(1)}%` : "-"}
-            trend={{ value: "", isPositive: true }}
-            icon={<CheckCircle className="h-6 w-6" />}
           />
         </div>
         {/* Main Content Grid */}
@@ -234,23 +226,6 @@ export default function Dashboard() {
           <div className="space-y-6">
             <div>
               <h3 className="text-lg font-semibold mb-4">Quick Insights</h3>
-              {/* High Risk Alert */}
-              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 mb-4">
-                <div className="flex items-start gap-3">
-                  <div className="h-10 w-10 rounded-full bg-destructive/20 flex items-center justify-center flex-shrink-0">
-                    <AlertTriangle className="h-5 w-5 text-destructive" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-sm mb-1">High-Risk Alert</h4>
-                    <p className="text-xs text-muted-foreground mb-3">
-                      5 transactions flagged in the last hour with risk scores above 85%
-                    </p>
-                    <Button size="sm" variant="destructive" className="h-8">
-                      Review Now
-                    </Button>
-                  </div>
-                </div>
-              </div>
               {/* Risk Distribution Pie Chart */}
               <div className="rounded-lg border border-border bg-card p-6">
                 <h4 className="font-semibold mb-4">Transaction Risk Distribution</h4>
@@ -330,17 +305,6 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-        </div>
-        {/* Quick Actions */}
-        <div className="fixed bottom-8 right-8 flex flex-col gap-3">
-          <Button 
-            size="lg" 
-            variant="hero" 
-            className="shadow-glow-lg"
-            onClick={() => navigate("/manual-prediction")}
-          >
-            + New Manual Prediction
-          </Button>
         </div>
       </main>
     </div>

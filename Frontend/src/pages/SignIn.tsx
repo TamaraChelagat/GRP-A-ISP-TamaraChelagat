@@ -180,27 +180,6 @@ export default function SignIn() {
               </p>
             </div>
 
-            <div className="space-y-4 pt-8">
-              <div className="flex items-center gap-3 p-4 rounded-lg bg-card/50 backdrop-blur-sm border border-border">
-                <div className="h-12 w-12 rounded-full bg-success/20 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-success">$38.5B</span>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold">Fraud Prevented Globally</p>
-                  <p className="text-xs text-muted-foreground">Across 2,500+ institutions</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 p-4 rounded-lg bg-card/50 backdrop-blur-sm border border-border">
-                <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-primary">99.2%</span>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold">Detection Accuracy</p>
-                  <p className="text-xs text-muted-foreground">Real-time ML predictions</p>
-                </div>
-              </div>
-            </div>
           </div>
 
           <div className="text-sm text-muted-foreground">
