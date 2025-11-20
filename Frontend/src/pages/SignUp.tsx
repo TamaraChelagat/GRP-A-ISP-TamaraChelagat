@@ -222,7 +222,7 @@ export default function SignUp() {
 
             <div className="space-y-3">
               {[
-                "Real-time fraud detection with 99.2% accuracy",
+                "Real-time fraud detection",
                 "Explainable AI for every prediction",
                 "Seamless integration with existing systems",
                 "24/7 monitoring and instant alerts",

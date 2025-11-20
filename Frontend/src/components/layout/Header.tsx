@@ -1,4 +1,4 @@
-import { Search, Bell, User, LayoutDashboard, History, Brain, BookOpen, Menu } from "lucide-react";
+import { Search, Bell, User, LayoutDashboard, History, Brain, BookOpen, Menu, FileText } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,6 +44,7 @@ export function Header() {
   const navigationItems = [
     { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { path: "/transactions", label: "Transactions", icon: History },
+    { path: "/manual-prediction", label: "Manual Prediction", icon: FileText },
     { path: "/explainability", label: "Explainability", icon: Brain },
     { path: "/knowledge", label: "Knowledge Base", icon: BookOpen },
   ];
